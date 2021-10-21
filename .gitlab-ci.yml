@@ -1,0 +1,93 @@
+---
+stages:
+  - prepare_aws
+  - prepare
+  - validate
+  - build
+  - deploy
+  - destroy
+
+variables:
+  AWS_ACCESS_KEY_ID: AWS_ACCESS_KEY_ID="ASIATGXAR4ELX5L5THWH"
+  AWS_SECRET_ACCESS_KEY: AWS_SECRET_ACCESS_KEY="UBBbTfIUZabbKq9W3BIavgRcq6XVRnNf57RFyCaO"
+  AWS_SESSION_TOKEN: AWS_SESSION_TOKEN="IQoJb3JpZ2luX2VjEIP//////////wEaCWV1LXdlc3QtMSJHMEUCIF5w8NQoDXL8P0G7RTLo0PUMZA1oDpxNsWl5BNLboVSqAiEA4MEHfbl5tltpceV6399h3HC80KAyMLShBwamdKObmXMqpgMI7P//////////ARAAGgwyMjA1ODgwMDc3MDMiDGNfNx4G6fTTToiEqyr6Ak7v0LUOabCuCoOM3yI6LkmGhQ+9jVLJUMhgc+lSRhRm7q7DD5AIqB1Af1/B7dOCsYjgbGLfoLp1NeMv72Zvgf6s8jWyuz7thZvd7RwKG6IGThcfYVsUL5uN8RGmpv081i0qwMdNWCFaz+ZmwYlL+wCyAbmFZvbz4Pbzbf3ZSKomq5WCgyX2DXS/ihTA3XN4fTUn7UukBSc16ugOeSDVh0PwqL3dGTH9oBGV5XqpA5rcBF/qmsIO92MmSIg4RtyTueQytSbAhVpmlE9qNfkkea4kbRHO0ys1G4M4EdGA3DoVdwYBm2w+qUvDmg9GivHlkFRSj3/6+3RDK3enNrfea5wnB1GR+F5c5kx3rL9ilYvBm+DaVTJfFnpsxUr8BtuNVPl4JE6Zt7bOVhwe4xFEcTjVr2vMp8f7zyTea9xmWvjNsyKH99MtwgsHPB0pp5WNjFpNuEzHoib88a1lhjAh1m/EuInBQ5t/U6WE+MSkEckTJIvgLeIuGNn8EzDz19uKBjqmAU2rSBQScU8XRRxc7E2MUMZu3t3+lmexZZk5+GrH0Zfs9TOu7cDEyJVs2WkXG9cVq/QGknnCYYabV/cNhCClb66b7D/jdvyCjzsaWz9TNHCxOF3znsHIv5LjEQKzhBf3icLcacrBSFZKGVpGBpcJTRxIu5l4/UERR6Epi8oZrlOvxJ99Am1MYIdFTmE/viNKr0KQO1VIZEUKVzhGfxcso4uPJ0sAJQ0="
+  TF_ROOT: ${CI_PROJECT_DIR}
+  TF_ADDRESS: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/example-production
+  #"{GITLAB_API_URL}/projects/{PROJECT_ID}/terraform/state/{STATE_NAME}"
+  #/terraform/state/example-production
+
+cache:
+  key: example-production
+  paths:
+    - ${TF_ROOT}/.terraform
+.prepare_aws_env:
+  stage: prepare_aws
+  tags:
+    - rosetta-docker
+  image: registry.gitlab.com/gitlab-org/cloud-deploy/aws-base:latest  # see the note below
+  script:
+    - export AWS_ACCESS_KEY_ID="ASIATGXAR4ELX5L5THWH"
+    # - export AWS_SECRET_ACCESS_KEY="UBBbTfIUZabbKq9W3BIavgRcq6XVRnNf57RFyCaO"
+    # - export AWS_SESSION_TOKEN="IQoJb3JpZ2luX2VjEIP//////////wEaCWV1LXdlc3QtMSJHMEUCIF5w8NQoDXL8P0G7RTLo0PUMZA1oDpxNsWl5BNLboVSqAiEA4MEHfbl5tltpceV6399h3HC80KAyMLShBwamdKObmXMqpgMI7P//////////ARAAGgwyMjA1ODgwMDc3MDMiDGNfNx4G6fTTToiEqyr6Ak7v0LUOabCuCoOM3yI6LkmGhQ+9jVLJUMhgc+lSRhRm7q7DD5AIqB1Af1/B7dOCsYjgbGLfoLp1NeMv72Zvgf6s8jWyuz7thZvd7RwKG6IGThcfYVsUL5uN8RGmpv081i0qwMdNWCFaz+ZmwYlL+wCyAbmFZvbz4Pbzbf3ZSKomq5WCgyX2DXS/ihTA3XN4fTUn7UukBSc16ugOeSDVh0PwqL3dGTH9oBGV5XqpA5rcBF/qmsIO92MmSIg4RtyTueQytSbAhVpmlE9qNfkkea4kbRHO0ys1G4M4EdGA3DoVdwYBm2w+qUvDmg9GivHlkFRSj3/6+3RDK3enNrfea5wnB1GR+F5c5kx3rL9ilYvBm+DaVTJfFnpsxUr8BtuNVPl4JE6Zt7bOVhwe4xFEcTjVr2vMp8f7zyTea9xmWvjNsyKH99MtwgsHPB0pp5WNjFpNuEzHoib88a1lhjAh1m/EuInBQ5t/U6WE+MSkEckTJIvgLeIuGNn8EzDz19uKBjqmAU2rSBQScU8XRRxc7E2MUMZu3t3+lmexZZk5+GrH0Zfs9TOu7cDEyJVs2WkXG9cVq/QGknnCYYabV/cNhCClb66b7D/jdvyCjzsaWz9TNHCxOF3znsHIv5LjEQKzhBf3icLcacrBSFZKGVpGBpcJTRxIu5l4/UERR6Epi8oZrlOvxJ99Am1MYIdFTmE/viNKr0KQO1VIZEUKVzhGfxcso4uPJ0sAJQ0="
+    # #- aws ec2 describe-instances
+    # - aws sts get-caller-identity
+
+
+before_script:
+  - cd ${TF_ROOT}
+  - export AWS_ACCESS_KEY_ID="ASIATGXAR4ELSINRFUOY"
+  - export AWS_SECRET_ACCESS_KEY="BPPFB6vH9N06xCDV01fxvViCgCR/d2fwPKtmzn6S"
+  - export AWS_SESSION_TOKEN="IQoJb3JpZ2luX2VjEBwaCWV1LXdlc3QtMSJGMEQCIB0Sic8jvcf1d+AKv3HFirzI5LfGn+YG7IcwwGG/Lw0bAiBCc8O/dWAkdSBqdnM2D30cAUkcbyO9Y2cAFkbCbBP5PyqmAwiV//////////8BEAAaDDIyMDU4ODAwNzcwMyIMm/WFJVhSxKhw88wWKvoCb3a0pcCYH+ApxjOzDPXDeJ7Gm1jkS3cvzmRYH9lYunReti2IS3MDEDIngHcOCj6C6q0lvKEb3oG/yj4NwXGFMSXjU3d9mpvXz0uWOF33lhg/pUDF1R7ylu6qMpdlJuoD6HRyD0OXehgqO0f1Wt4/KVAmMKLvWiWl790KYf4ct7s14ayWG4EMP0HlXhmE4NuRD7sZkuAcZ1a6h6ArhnVPIJ3od1kI12ZlTlBWmgPmOJQkreJZSh7SIsOeTenURCUdnor2YSrFAmzt+Be5eogi7SS1LJSaJ45rfkzcHbswJuIJHk0cL6Erbu0jekcEZT+K/cQ8AFB33AnlyI217ctKvTawkYWF45+4mAqCQylQjOCh/6wBwGuNkvWW3kATyRsLjs9wDEzHde0APG0xd9I3A3CVBKt8aEKRDBSq5PyUQ61HRZk90eWtWpLGP4bG5BImV0NKzCdbP7FcMpYYYU6ezYGmUr8mT5SCfxBz9YjwPcYQP0tTd8eEoxt+MK2f/YoGOqcBmPgzkVdGXH03BQ7L8PUr1rWU+Q85+0ugTNbHv+MCJikxPsjPA3RlLbRV6lz4yyf4ysNvYxQOoofZnRxv3Iy1A+KNFcOilE1u8tzDS8ARUoT5Oq1+n9B6eX3EDdMGIXAgGWPHIH9MD6+i3faYJYO0QqnAuvalqCumBWvKOmyLnfuk1oQDKNLpT0BaLA/PN8c2CbLJCoLJObfnmqqPm1L4pYBwPkj8Fb8="
+image: registry.gitlab.com/gitlab-org/terraform-images/stable:latest 
+#/bin/hashicorp/terraform:light
+
+#registry.gitlab.com/gitlab-org/terraform-images/stable:latest
+ 
+init:
+  stage: prepare
+  script:
+    - gitlab-terraform init
+
+.validate:
+  stage: validate
+  script:
+    - gitlab-terraform validate
+
+plan:
+  stage: build
+  script:
+    - gitlab-terraform plan -lock=false -var-file terraform.tfvars
+    # - aws sts get-caller-identity --profile=220588007703_SSO-Consumer-admin
+    - gitlab-terraform plan-json
+  artifacts:
+    name: plan
+    paths:
+      - ${TF_ROOT}/plan.cache
+    reports:
+      terraform: ${TF_ROOT}/plan.json
+
+apply:
+  stage: deploy
+  environment:
+    name: production
+  script:
+    - gitlab-terraform apply -lock=false
+  dependencies:
+    - plan
+  #when: manual
+  only:
+    - main
+
+destroy:
+  stage: destroy
+  # environment:
+  #   name: production
+  script:
+   
+    - gitlab-terraform destroy -lock=false
+  # dependencies:
+  #   - plan
+  #when: manual
+  only:
+    - main
+    
